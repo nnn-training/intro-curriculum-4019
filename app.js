@@ -46,7 +46,7 @@ passport.use(new GitHubStrategy({
     process.nextTick(function () {
       User.upsert({
         userId: profile.id,
-        username: profile.username
+        userName: profile.username
       }).then(() => {
         done(null, profile);
       });
