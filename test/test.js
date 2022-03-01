@@ -6,6 +6,7 @@ const User = require('../models/user');
 const Schedule = require('../models/schedule');
 const Candidate = require('../models/candidate');
 const Availability = require('../models/availability');
+const assert = require('assert');
 
 describe('/login', () => {
   beforeAll(() => {
@@ -55,7 +56,7 @@ describe('/schedules', () => {
   });
 
   test('予定が作成でき、表示される', done => {
-    User.upsert({ userId: 0, username: 'testuser' }).then(() => {
+    User.upsert({ userId: 0, userName: 'testuser' }).then(() => {
       request(app)
         .post('/schedules')
         .send({
@@ -94,7 +95,7 @@ describe('/schedules/:scheduleId/users/:userId/candidates/:candidateId', () => {
   });
 
   test('出欠が更新できる', (done) => {
-    User.upsert({ userId: 0, username: 'testuser' }).then(() => {
+    User.upsert({ userId: 0, userName: 'testuser' }).then(() => {
       request(app)
         .post('/schedules')
         .send({ scheduleName: 'テスト出欠更新予定1', memo: 'テスト出欠更新メモ1', candidates: 'テスト出欠更新候補1' })
@@ -110,7 +111,19 @@ describe('/schedules/:scheduleId/users/:userId/candidates/:candidateId', () => {
               .post(`/schedules/${scheduleId}/users/${userId}/candidates/${candidate.candidateId}`)
               .send({ availability: 2 }) // 出席に更新
               .expect('{"status":"OK","availability":2}')
-              .end((err, res) => { deleteScheduleAggregate(scheduleId, done, err); });
+              // データベースのチェック
+              .end((err, res) => {
+                Availability.findAll({
+                  where: { scheduleId: scheduleId}
+                }).then((availabilities) => {
+                  // 出欠データ
+                  assert.strictEqual(availabilities.length, 1);
+                  assert.strictEqual(availabilities[0].availability, 2);                  
+                  // データの削除
+                  deleteScheduleAggregate(scheduleId, done, err);
+                });                                                      
+              });
+              //.end((err, res) => { deleteScheduleAggregate(scheduleId, done, err); });
           });
         });
     });
