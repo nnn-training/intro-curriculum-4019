@@ -2,6 +2,7 @@
 const request = require('supertest');
 const app = require('../app');
 const passportStub = require('passport-stub');
+const assert = require('assert');
 const User = require('../models/user');
 const Schedule = require('../models/schedule');
 const Candidate = require('../models/candidate');
@@ -110,7 +111,15 @@ describe('/schedules/:scheduleId/users/:userId/candidates/:candidateId', () => {
               .post(`/schedules/${scheduleId}/users/${userId}/candidates/${candidate.candidateId}`)
               .send({ availability: 2 }) // 出席に更新
               .expect('{"status":"OK","availability":2}')
-              .end((err, res) => { deleteScheduleAggregate(scheduleId, done, err); });
+              .end((err, res) => {
+                Availability.findAll({
+                  where: { scheduleId: scheduleId}
+                }).then((availabilities) => {
+                  assert.strictEqual(availabilities.length, 1);
+                  assert.strictEqual(availabilities[0].availability, 2);
+                  deleteScheduleAggregate(scheduleId, done, err);
+                });
+              });
           });
         });
     });
