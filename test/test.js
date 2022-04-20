@@ -110,12 +110,25 @@ describe('/schedules/:scheduleId/users/:userId/candidates/:candidateId', () => {
               .post(`/schedules/${scheduleId}/users/${userId}/candidates/${candidate.candidateId}`)
               .send({ availability: 2 }) // 出席に更新
               .expect('{"status":"OK","availability":2}')
-              .end((err, res) => { deleteScheduleAggregate(scheduleId, done, err); });
+              .end((err, res) => {
+                Availability.findAll({
+                  where: { scheduleId: scheduleId }
+                }).then((availabilities) => {
+                  assert.strictEqual(availabilities.length, 1);
+                  assert.strictEqual(availabilities, [{
+                    candidateId: candidate.candidateId,
+                    userId: 0, 
+                    availavility: 2,
+                    scheduleId:scheduleId
+                  }]);
+                  deleteScheduleAggregate(scheduleId, done, err);
+                });
+                });
+              });
+              });
           });
         });
     });
-  });
-});
 
 function deleteScheduleAggregate(scheduleId, done, err) {
   Availability.findAll({
