@@ -107,7 +107,7 @@ describe('/schedules/:scheduleId/users/:userId/candidates/:candidateId', () => {
     });
     // 更新がされることをテスト
     const userId = 0;
-    const num = Math.floor(Math.random()*3);
+    const num = Math.floor(Math.random()*3);  //出欠を表す数値をテストではランダム作成する
     await request(app)
       .post(`/schedules/${scheduleId}/users/${userId}/candidates/${candidate.candidateId}`)
       .send({ availability: num }) // 出席に更新
