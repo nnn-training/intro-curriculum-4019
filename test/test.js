@@ -6,6 +6,7 @@ const User = require('../models/user');
 const Schedule = require('../models/schedule');
 const Candidate = require('../models/candidate');
 const Availability = require('../models/availability');
+const assert = require("assert");
 
 describe('/login', () => {
   beforeAll(() => {
@@ -116,7 +117,8 @@ describe('/schedules/:scheduleId/users/:userId/candidates/:candidateId', () => {
     const availabilities = await Availability.findAll({
       where: { scheduleId: scheduleId }
     });
-    expect(availabilities[0].dataValues.availability).toBe(num);
+    assert.deepStrictEqual(availabilities.length, 1);
+    expect(availabilities[0].availability).toBe(num); 
   });
 });
 
