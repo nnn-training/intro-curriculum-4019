@@ -111,6 +111,13 @@ describe('/schedules/:scheduleId/users/:userId/candidates/:candidateId', () => {
       .post(`/schedules/${scheduleId}/users/${userId}/candidates/${candidate.candidateId}`)
       .send({ availability: 2 }) // 出席に更新
       .expect('{"status":"OK","availability":2}')
+    const availabilities = await Availability.findAll({
+      where: {scheduleId: scheduleId}
+    });
+    //
+    await
+      expect(availabilities[0].availability).toBe(2);
+      expect(availabilities.length).toBe(1)
   });
 });
 
