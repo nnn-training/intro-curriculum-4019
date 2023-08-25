@@ -110,7 +110,13 @@ describe('/schedules/:scheduleId/users/:userId/candidates/:candidateId', () => {
     await request(app)
       .post(`/schedules/${scheduleId}/users/${userId}/candidates/${candidate.candidateId}`)
       .send({ availability: 2 }) // 出席に更新
-      .expect('{"status":"OK","availability":2}')
+      .expect('{"status":"OK","availability":2}');
+    // データベースに保存されたことをテスト
+    const availabilities = await Availability.findAll({
+      where: { scheduleId: scheduleId }
+    });
+    expect(availabilities.length).toBe(1);
+    expect(availabilities[0].availability).toBe(2);
   });
 });
 
