@@ -6,6 +6,7 @@ const User = require('../models/user');
 const Schedule = require('../models/schedule');
 const Candidate = require('../models/candidate');
 const Availability = require('../models/availability');
+const assert = require("assert");
 
 describe('/login', () => {
   beforeAll(() => {
@@ -107,10 +108,17 @@ describe('/schedules/:scheduleId/users/:userId/candidates/:candidateId', () => {
     });
     // 更新がされることをテスト
     const userId = 0;
+    const num = Math.floor(Math.random()*3);  //出欠を表す数値をテストではランダム作成する
     await request(app)
       .post(`/schedules/${scheduleId}/users/${userId}/candidates/${candidate.candidateId}`)
-      .send({ availability: 2 }) // 出席に更新
-      .expect('{"status":"OK","availability":2}')
+      .send({ availability: num }) // 出席に更新
+      .expect(`{"status":"OK","availability":${num}}`)
+
+    const availabilities = await Availability.findAll({
+      where: { scheduleId: scheduleId }
+    });
+    assert.deepStrictEqual(availabilities.length, 1);
+    expect(availabilities[0].availability).toBe(num); 
   });
 });
 
