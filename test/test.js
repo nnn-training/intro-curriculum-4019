@@ -66,7 +66,7 @@ describe('/schedules', () => {
         candidates: 'テスト候補1\r\nテスト候補2\r\nテスト候補3'
       })
       .expect('Location', /schedules/)
-      .expect(302)
+      .expect(302);
 
     const createdSchedulePath = res.headers.location;
     scheduleId = createdSchedulePath.split('/schedules/')[1];
@@ -78,7 +78,7 @@ describe('/schedules', () => {
       .expect(/テスト候補1/)
       .expect(/テスト候補2/)
       .expect(/テスト候補3/)
-      .expect(200)
+      .expect(200);
   });
 });
 
@@ -99,7 +99,7 @@ describe('/schedules/:scheduleId/users/:userId/candidates/:candidateId', () => {
     await User.upsert({ userId: 0, username: 'testuser' });
     const res = await request(app)
       .post('/schedules')
-      .send({ scheduleName: 'テスト出欠更新予定1', memo: 'テスト出欠更新メモ1', candidates: 'テスト出欠更新候補1' })
+      .send({ scheduleName: 'テスト出欠更新予定1', memo: 'テスト出欠更新メモ1', candidates: 'テスト出欠更新候補1' });
     const createdSchedulePath = res.headers.location;
     scheduleId = createdSchedulePath.split('/schedules/')[1];
     const candidate = await Candidate.findOne({
@@ -110,7 +110,12 @@ describe('/schedules/:scheduleId/users/:userId/candidates/:candidateId', () => {
     await request(app)
       .post(`/schedules/${scheduleId}/users/${userId}/candidates/${candidate.candidateId}`)
       .send({ availability: 2 }) // 出席に更新
-      .expect('{"status":"OK","availability":2}')
+      .expect('{"status":"OK","availability":2}');
+    const availabilities = await Availability.findAll({
+      where: { scheduleId: scheduleId }
+    });
+    expect(availabilities.length).toBe(1);
+    expect(availabilities[0].availability).toBe(2);
   });
 });
 
