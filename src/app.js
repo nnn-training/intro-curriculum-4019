@@ -7,7 +7,8 @@ const { HTTPException } = require("hono/http-exception");
 const { secureHeaders } = require("hono/secure-headers");
 const { env } = require("hono/adapter");
 const { serveStatic } = require("@hono/node-server/serve-static");
-const { githubAuth } = require("@hono/oauth-providers/github");
+const { trimTrailingSlash } = require("hono/trailing-slash")
+const { githubAuth } = require("@hono/oauth-providers/github"); = require("@hono/oauth-providers/github");
 const { getIronSession } = require("iron-session");
 const { PrismaClient } = require("@prisma/client");
 const layout = require("./layout");
@@ -25,6 +26,7 @@ const app = new Hono();
 app.use(logger());
 app.use(serveStatic({ root: "./public" }));
 app.use(secureHeaders());
+app.use(trimTrailingSlash());
 
 // セッション管理をするためのミドルウェア
 app.use(async (c, next) => {
