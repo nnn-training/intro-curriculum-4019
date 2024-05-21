@@ -118,6 +118,9 @@ describe('/schedules/:scheduleId/users/:userId/candidates/:candidateId', () => {
       .post(`/schedules/${scheduleId}/users/${userId}/candidates/${candidate.candidateId}`)
       .send({ availability: 2 }) // 出席に更新
       .expect('{"status":"OK","availability":2}');
+    const availabilities = await prisma.availability.findMany({where: {scheduleId}});
+    expect(availabilities.length).toBe(1);
+    expect(availabilities[0].availability).toBe(2);
   });
 });
 
