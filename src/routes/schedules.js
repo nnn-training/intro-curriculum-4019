@@ -8,7 +8,9 @@ const prisma = new PrismaClient({ log: ["query"] });
 
 const app = new Hono();
 
-app.get("/new", ensureAuthenticated(), (c) => {
+app.use(ensureAuthenticated())
+
+app.get("/new", (c) => {
   return c.html(
     layout(
       c,
@@ -34,7 +36,7 @@ app.get("/new", ensureAuthenticated(), (c) => {
   );
 });
 
-app.post("/", ensureAuthenticated(), async (c) => {
+app.post("/", async (c) => {
   const { user } = c.get("session") ?? {};
   const body = await c.req.parseBody();
 
@@ -66,7 +68,7 @@ app.post("/", ensureAuthenticated(), async (c) => {
   return c.redirect("/schedules/" + schedule.scheduleId);
 });
 
-app.get("/:scheduleId", ensureAuthenticated(), async (c) => {
+app.get("/:scheduleId", async (c) => {
   const { user } = c.get("session") ?? {};
   const schedule = await prisma.schedule.findUnique({
     where: { scheduleId: c.req.param("scheduleId") },
