@@ -8,7 +8,7 @@ const prisma = new PrismaClient({ log: ["query"] });
 
 const app = new Hono();
 
-app.use(ensureAuthenticated())
+app.use(ensureAuthenticated());
 
 app.get("/new", (c) => {
   return c.html(
