@@ -165,5 +165,13 @@ describe("/schedules/:scheduleId/users/:userId/candidates/:candidateId", () => {
     );
 
     expect(await res.json()).toEqual({ status: "OK", availability: 2 });
+
+    const availabilities = await prisma.availability.findMany({
+      where: { scheduleId },
+    });
+    // 取得できた出欠が1件であることの確認
+    expect(availabilities.length).toBe(1);
+    // 取得できた出欠の1件目の内容が 2 であることの確認
+    expect(availabilities[0].availability).toBe(2);
   });
 });
