@@ -117,7 +117,7 @@ app.get("/:scheduleId", async (c) => {
   userMap.set(parseInt(user.id, 10), {
     isSelf: true,
     userId: parseInt(user.id, 10),
-    username: user.username,
+    username: user.login,
   });
   availabilities.forEach((a) => {
     userMap.set(a.user.userId, {
