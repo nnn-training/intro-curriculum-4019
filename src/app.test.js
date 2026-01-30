@@ -165,5 +165,12 @@ describe("/schedules/:scheduleId/users/:userId/candidates/:candidateId", () => {
     );
 
     expect(await res.json()).toEqual({ status: "OK", availability: 2 });
+     const availabilityes = await prisma.availability.findMany({
+        where : {  scheduleId},
+     });
+
+     expect(availabilityes.length).toBe(1);
+     expect(availabilityes[0].availability).toBe(2);
+    
   });
 });
