@@ -1,20 +1,20 @@
-const { Hono } = require("hono");
-const { html } = require("hono/html");
-const layout = require("../layout");
-const ensureAuthenticated = require("../middlewares/ensure-authenticated");
-const { randomUUID } = require("node:crypto");
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient({ log: ["query"] });
+const { Hono } = require('hono');
+const { html } = require('hono/html');
+const layout = require('../layout');
+const ensureAuthenticated = require('../middlewares/ensure-authenticated');
+const { randomUUID } = require('node:crypto');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient({ log: ['query'] });
 
 const app = new Hono();
 
 app.use(ensureAuthenticated());
 
-app.get("/new", (c) => {
+app.get('/new', (c) => {
   return c.html(
     layout(
       c,
-      "予定の作成",
+      '予定の作成',
       html`
         <form method="post" action="/schedules">
           <div>
@@ -36,15 +36,15 @@ app.get("/new", (c) => {
   );
 });
 
-app.post("/", async (c) => {
-  const { user } = c.get("session") ?? {};
+app.post('/', async (c) => {
+  const { user } = c.get('session') ?? {};
   const body = await c.req.parseBody();
 
   // 予定を登録
   const schedule = await prisma.schedule.create({
     data: {
       scheduleId: randomUUID(),
-      scheduleName: body.scheduleName.slice(0, 255) || "（名称未設定）",
+      scheduleName: body.scheduleName.slice(0, 255) || '（名称未設定）',
       memo: body.memo,
       createdBy: user.id,
       updatedAt: new Date(),
@@ -53,9 +53,9 @@ app.post("/", async (c) => {
 
   // 候補日程を登録
   const candidateNames = body.candidates
-    .split("\n")
+    .split('\n')
     .map((s) => s.trim())
-    .filter((s) => s !== "");
+    .filter((s) => s !== '');
   const candidates = candidateNames.map((candidateName) => ({
     candidateName: candidateName.slice(0, 255),
     scheduleId: schedule.scheduleId,
@@ -65,13 +65,13 @@ app.post("/", async (c) => {
   });
 
   // 作成した予定のページにリダイレクト
-  return c.redirect("/schedules/" + schedule.scheduleId);
+  return c.redirect('/schedules/' + schedule.scheduleId);
 });
 
-app.get("/:scheduleId", async (c) => {
-  const { user } = c.get("session") ?? {};
+app.get('/:scheduleId', async (c) => {
+  const { user } = c.get('session') ?? {};
   const schedule = await prisma.schedule.findUnique({
-    where: { scheduleId: c.req.param("scheduleId") },
+    where: { scheduleId: c.req.param('scheduleId') },
     include: {
       user: {
         select: {
@@ -88,13 +88,13 @@ app.get("/:scheduleId", async (c) => {
 
   const candidates = await prisma.candidate.findMany({
     where: { scheduleId: schedule.scheduleId },
-    orderBy: { candidateId: "asc" },
+    orderBy: { candidateId: 'asc' },
   });
 
   // データベースからその予定の全ての出欠を取得する
   const availabilities = await prisma.availability.findMany({
     where: { scheduleId: schedule.scheduleId },
-    orderBy: { candidateId: "asc" },
+    orderBy: { candidateId: 'asc' },
     include: {
       user: {
         select: {
@@ -104,39 +104,23 @@ app.get("/:scheduleId", async (c) => {
       },
     },
   });
-  // 出欠 MapMap を作成する
-  const availabilityMapMap = new Map(); // key: userId, value: Map(key: candidateId, value: availability)
+
+  // 各候補日程に対する各ユーザの出欠を入れ子の Map にして格納するための Map を作る。
+  // key: candidateId, value: Map (key: userId, value: availability)
+  const availabilityMapMap = new Map(candidates.map((c) => [c.candidateId, new Map()]));
+
+  // 閲覧ユーザと、出欠を登録したユーザ情報を格納するための Map を作る。
+  const userMap = new Map(); // key: userId, value: { userId, username }
+  const viewerUserId = user.id;
+  userMap.set(viewerUserId, { userId: viewerUserId, username: user.login });
+
   availabilities.forEach((a) => {
-    const map = availabilityMapMap.get(a.user.userId) || new Map();
-    map.set(a.candidateId, a.availability);
-    availabilityMapMap.set(a.user.userId, map);
+    availabilityMapMap.get(a.candidateId)?.set(a.user.userId, a.availability);
+    userMap.set(a.user.userId, a.user);
   });
 
-  // 閲覧ユーザと出欠に紐づくユーザからユーザ Map を作る
-  const userMap = new Map(); // key: userId, value: User
-  userMap.set(parseInt(user.id, 10), {
-    isSelf: true,
-    userId: parseInt(user.id, 10),
-    username: user.login,
-  });
-  availabilities.forEach((a) => {
-    userMap.set(a.user.userId, {
-      isSelf: parseInt(user.id, 10) === a.user.userId, // 閲覧ユーザ自身であるかを示す真偽値
-      userId: a.user.userId,
-      username: a.user.username,
-    });
-  });
-
-  // 全ユーザ、全候補で二重ループしてそれぞれの出欠の値がない場合には、「欠席」を設定する
+  // 閲覧ユーザと、出欠を登録したユーザを合わせた全ユーザの配列を作る
   const users = Array.from(userMap.values());
-  users.forEach((u) => {
-    candidates.forEach((c) => {
-      const map = availabilityMapMap.get(u.userId) || new Map();
-      const a = map.get(c.candidateId) || 0; // デフォルト値は 0 を使用
-      map.set(c.candidateId, a);
-      availabilityMapMap.set(u.userId, map);
-    });
-  });
 
   return c.html(
     layout(
@@ -157,14 +141,14 @@ app.get("/:scheduleId", async (c) => {
               <tr>
                 <th>${candidate.candidateName}</th>
                 ${users.map((user) => {
-                  const availability = availabilityMapMap
-                    .get(user.userId)
-                    .get(candidate.candidateId);
+                  // 出欠が未登録の場合は「欠席」と表示する。
+                  const availability =
+                    availabilityMapMap.get(candidate.candidateId)?.get(user.userId) ?? 0;
                   const availabilityLabels = ["欠", "？", "出"];
                   const label = availabilityLabels[availability];
                   return html`
                     <td>
-                      ${user.isSelf
+                      ${user.userId === viewerUserId
                         ? html`<button>${label}</button>`
                         : html`<p>${label}</p>`}
                     </td>
