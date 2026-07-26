@@ -165,5 +165,13 @@ describe("/schedules/:scheduleId/users/:userId/candidates/:candidateId", () => {
     );
 
     expect(await res.json()).toEqual({ status: "OK", availability: 2 });
+ 
+    const availabilities = await prisma.availability.findMany({
+      where: { scheduleId },
+    });
+    // TODO ここにテストを記述する
+    expect(availabilities.length).toBe(1);
+    expect(availabilities[0].availability).toBe(2);
+    
   });
 });
